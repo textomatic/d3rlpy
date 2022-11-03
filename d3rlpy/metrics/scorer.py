@@ -136,7 +136,7 @@ def true_q_scorer(algo: AlgoProtocol, episodes: List[Episode]) -> float:
             if algo.reward_scaler:
                 rewards = algo.reward_scaler.transform_numpy(rewards)
             y = rewards + algo.gamma * cast(np.ndarray, next_values) * mask
-            true_q_values.append(y)
+            true_q_values += y.tolist()
 
     return float(np.mean(true_q_values))
 

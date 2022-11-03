@@ -114,6 +114,33 @@ def td_error_scorer(algo: AlgoProtocol, episodes: List[Episode]) -> float:
     return -float(np.mean(total_errors))
 
 
+def true_q_scorer(algo: AlgoProtocol, episodes: List[Episode]) -> float:
+    r"""Returns average of discounted true Q-values.
+
+    Args:
+        algo: algorithm.
+        episodes: list of episodes.
+
+    Returns:
+        average discounted true Q-value.
+
+    """
+    true_q_values = []
+    for episode in episodes:
+        for batch in _make_batches(episode, WINDOW_SIZE, algo.n_frames):
+            # estimate values for next observation
+            next_actions = algo.predict([batch.observations[0]])
+            next_values = algo.predict_value([batch.observations[0]], next_actions)
+            mask = (1.0 - np.asarray(batch.terminals)).reshape(-1)
+            rewards = np.asarray(batch.next_rewards).reshape(-1)
+            if algo.reward_scaler:
+                rewards = algo.reward_scaler.transform_numpy(rewards)
+            y = rewards + algo.gamma * cast(np.ndarray, next_values) * mask
+            true_q_values.append(y)
+
+    return float(np.mean(true_q_values))
+
+
 def discounted_sum_of_advantage_scorer(
     algo: AlgoProtocol, episodes: List[Episode]
 ) -> float:
